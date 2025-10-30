@@ -5,7 +5,7 @@ import pandas as pd
 from numpy.random import default_rng as rng
 import sys
 
-sys.path.insert(1, 'execute_btsql')
+sys.path.insert(1, 'bt_utils')
 import execute_btsql as bt_sql
 
 st.set_page_config(layout="wide")
