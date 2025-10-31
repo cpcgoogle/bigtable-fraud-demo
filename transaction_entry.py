@@ -1,7 +1,7 @@
 #transaction_entry.py
-
 import streamlit as st
 import pandas as pd
+import asyncio
 from numpy.random import default_rng as rng
 import sys
 
@@ -12,8 +12,6 @@ st.set_page_config(layout="wide")
 
 st.image("https://storage.mtls.cloud.google.com/crosbie/btfraud.png", width=650)
 st.title("Enter Credit Card Transaction")
-
-st.title(bt_sql.return_transaction_hx(12345))
 
 # Step 1: Initialize Session State Variables 
 if 'submitted_transaction' not in st.session_state:
@@ -112,7 +110,9 @@ if st.session_state.submitted_transaction:
 
 if st.session_state.agent_ran:
     st.header("Fraud Detection Agent Analysis 🤖")
-    st.markdown("**Historical data analysis complete.**")
-    st.dataframe(bt_sql.return_df())
-    
+    st.markdown("**Running fraud detection on recent transactions.**")
 
+    # Run the query and display the result
+    df = bt_sql.return_transaction_hx_df(form_data['credit_card_str'])
+    st.dataframe(df)
+    
