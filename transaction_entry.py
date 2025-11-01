@@ -18,6 +18,7 @@ import pandas as pd
 import asyncio
 from numpy.random import default_rng as rng
 import sys
+import re
 
 sys.path.insert(1, 'bt_utils')
 import execute_btsql as bt_sql
@@ -149,16 +150,60 @@ if st.session_state.agent_ran:
         df = bt_sql.return_transaction_hx_df(form_data['credit_card_str'])
         st.dataframe(df)
 
+        #AGENT GETS RUN HERE
+        fruad_analysis = agent_analyzer.run_fraud_agent("Create a fraud analysis for" + form_data['credit_card_str'])
+
         st.write("Agent fraud analysis summary for last transaction on card <strong>" + form_data['credit_card_str'] + "</strong>", 
         unsafe_allow_html=True)
 
-        st.write(
+        #parse out fraud recomendation 
+        pattern = r"IS_FRAUD:(\d+)"
+        match = re.search(pattern, text)
+        if match:
+            is_fraud = int(match.group(1))
+        else:
+            is_fraud = 0
+
+        if is_fraud == 1:
+
+            st.write(
+            """<div style="background-color: red; padding: 15px; border-radius: 5px;">
+            <pre style="background-color: red; padding: 10px; border-radius: 3px; overflow-x: auto;">"""
+            + "<b>Potential fraud detected</b>"
+            + """</pre></div>""",
+            unsafe_allow_html=True,
+            )
+
+            st.write(
             """<div style="background-color: #f0f0f0; padding: 15px; border-radius: 5px;">
             <pre style="background-color: #e0e0e0; padding: 10px; border-radius: 3px; overflow-x: auto;">"""
-            + agent_analyzer.run_fraud_agent("Create a fraud analysis for" + form_data['credit_card_str'])    
+            + fruad_analysis.replace("IS_FRAUD: 1", "").replace("FRAUD_ANALYSIS:", "")
             + """</pre></div>""",
             unsafe_allow_html=True,
         )        
+        else:
+            st.write(
+            """<div style="background-color: green; padding: 15px; border-radius: 5px;">
+            <pre style="background-color: green; padding: 10px; border-radius: 3px; overflow-x: auto;">"""
+            + "<b>No fraud detected</b>"
+            + """</pre></div>""",
+            unsafe_allow_html=True,
+            )
+
+            st.write(
+            """<div style="background-color: #f0f0f0; padding: 15px; border-radius: 5px;">
+            <pre style="background-color: #e0e0e0;; padding: 10px; border-radius: 3px; overflow-x: auto;">"""
+            + fruad_analysis.replace("IS_FRAUD: 0", "").replace("FRAUD_ANALYSIS:", "")
+            + """</pre></div>""",
+            unsafe_allow_html=True,
+            )
+            
+
+
+
+
+
+  
 
     
     

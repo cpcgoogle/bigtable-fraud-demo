@@ -24,7 +24,7 @@ def say_hi():
 
 def return_transaction_hx(credit_card_number):
     bt = my_bt.my_Bigtable()
-    rows = bt.execute_sql("SELECT * FROM v_transactions where orig_key =" + credit_card_number)
+    rows = bt.execute_sql("SELECT * FROM v_transactions where credit_card_number =" + credit_card_number + ";")
     return rows
 
 def return_transaction_hx_df(credit_card_number):

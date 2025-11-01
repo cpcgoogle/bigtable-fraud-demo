@@ -13,6 +13,14 @@
 # limitations under the License.
 
 #ONLY NEED TO CHANGE PROJECT AND INSTANCE SETTINGS HERE
+project_id = "google.com:cloud-bigtable-dev"
+instance_id = "fraud-demo"
+
+#do these outside the class so you don't setup another connection that isn't needed
+def get_project_id():
+    return project_id
+def get_instance_id():
+    return instance_id
 
 #imports and initalization
 from google.cloud import bigtable
@@ -20,10 +28,6 @@ from google.cloud.bigtable import column_family
 from google.cloud.bigtable import row
 from google.cloud.bigtable.data import BigtableDataClientAsync
 import asyncio
-
-# Initialize Bigtable client
-project_id = "google.com:cloud-bigtable-dev"
-instance_id = "fraud-demo"
 
 #client = bigtable.Client(project=project_id, admin=True)
 #instance = client.instance(instance_id)
@@ -41,10 +45,8 @@ class my_Bigtable:
     async def execute_sql_async(self, sql_query):
         async with BigtableDataClientAsync(project=project_id) as async_client:
             ret_row = []
-            query = (
-                "SELECT * FROM idx_transactions where credit_card_number = 60406847586"
-            )
-            query += ";"
+            query = (sql_query)
+
             #return await client.execute_query(query, instance_id)
             queryset = await async_client.execute_query(query, instance_id)
 
@@ -55,4 +57,8 @@ class my_Bigtable:
 
     def execute_sql(self, sql_query):
         return asyncio.run(self.execute_sql_async(sql_query))
+
+
+
+
 
