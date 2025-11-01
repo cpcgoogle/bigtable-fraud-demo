@@ -8,10 +8,15 @@ import sys
 sys.path.insert(1, 'bt_utils')
 import execute_btsql as bt_sql
 
+sys.path.insert(1, 'bt_fraud_agent')
+import agent_analyzer as agent_analyzer
+
 st.set_page_config(layout="wide")
 
 st.image("https://storage.mtls.cloud.google.com/crosbie/btfraud.png", width=650)
 st.title("Enter Credit Card Transaction")
+
+#st.title(agent_analyzer.run_fraud_agent("What is the current time in Ramsey, NJ"))
 
 # Step 1: Initialize Session State Variables 
 if 'submitted_transaction' not in st.session_state:
@@ -87,8 +92,20 @@ if st.session_state.submitted_transaction:
                 )
                 </pre>
                 </div>"""
-    st.markdown(conditional_write, unsafe_allow_html=True)
-            
+    #st.markdown(conditional_write, unsafe_allow_html=True)
+    st.code("""
+                condition_filter = ValueRegexFilter(b'pending')
+                mutation.check_and_mutate(
+                    predicate=condition_filter,
+                    # True mutation: executed if the predicate (condition_filter) passes
+                    true_mutations=[
+                        ('set_cell', column_family_id, column_qualifier, new_value, None)
+                    ],
+                    # False mutation: executed if the predicate (condition_filter) fails
+                    false_mutations=[]""", 
+                    language='python'
+            )
+
     ##st.write(f"![Check Logo]({green_check_url}) {text}")
     st.write(f'<img src="{green_check_url}" width="100">', unsafe_allow_html=True)
     st.write("<b>Rules based check sucessfull - Transaction Submitted to Bigtable</b>", unsafe_allow_html=True)
@@ -111,8 +128,23 @@ if st.session_state.submitted_transaction:
 if st.session_state.agent_ran:
     st.header("Fraud Detection Agent Analysis 🤖")
     st.markdown("**Running fraud detection on recent transactions.**")
+    # --- Call the Fraud Agent ---
+    with st.spinner("Agent is thinking..."):
+        # Run the query and display the result
+        st.write("Pulling recent transaction history from Bigtable logical view for analysis")
+        df = bt_sql.return_transaction_hx_df(form_data['credit_card_str'])
+        st.dataframe(df)
 
-    # Run the query and display the result
-    df = bt_sql.return_transaction_hx_df(form_data['credit_card_str'])
-    st.dataframe(df)
+        st.write("Agent fraud analysis summary for last transaction on card <strong>" + form_data['credit_card_str'] + "</strong>", 
+        unsafe_allow_html=True)
+
+        st.write(
+            """<div style="background-color: #f0f0f0; padding: 15px; border-radius: 5px;">
+            <pre style="background-color: #e0e0e0; padding: 10px; border-radius: 3px; overflow-x: auto;">"""
+            + agent_analyzer.run_fraud_agent("What is the current time in Ridgewood, NJ")    
+            + """</pre></div>""",
+            unsafe_allow_html=True,
+        )        
+
+    
     
