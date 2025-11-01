@@ -71,6 +71,57 @@ with st.form("transaction_form"):
 
     merchant = st.text_input("Merchant", help="Enter the merchant name.")
 
+    #flexible schema
+    if 'key_value_pairs' not in st.session_state:
+        # Start with one empty pair
+        st.session_state.key_value_pairs = [{'key': '', 'value': ''}]
+
+    def add_pair():
+        """Adds an empty key-value pair to the session state."""
+        st.session_state.key_value_pairs.append({'key': '', 'value': ''})
+
+    def remove_pair(index):
+        """Removes a key-value pair at the given index from the session state."""
+        if len(st.session_state.key_value_pairs) > 1:
+            st.session_state.key_value_pairs.pop(index)
+        else:
+            # Optionally clear the fields if only one remains
+            st.session_state.key_value_pairs[0] = {'key': '', 'value': ''}
+            st.warning("Cannot remove the last pair. Fields have been reset.")
+
+    st.subheader("Add flexible schema")
+        # Create an input for each key-value pair in the session state
+    for i, pair in enumerate(st.session_state.key_value_pairs):
+            
+        # Use columns to align the Key input, Value input, and a Remove button
+        col1, col2 = st.columns([0.4, 0.4])
+            
+        # Key Input
+        with col1:
+            key_input = st.text_input(
+                label=f"Key {i+1}", 
+                value=pair['key'], 
+                key=f"key_{i}",
+                label_visibility="collapsed",
+                placeholder="Enter Key Name"
+            )
+                
+            # Value Input
+            with col2:
+                value_input = st.text_input(
+                label=f"Value {i+1}", 
+                value=pair['value'], 
+                key=f"value_{i}",
+                label_visibility="collapsed",
+                placeholder="Enter Value"
+            )
+                
+            # Update the session state as the user types (important for adding/removing)
+            st.session_state.key_value_pairs[i]['key'] = key_input
+            st.session_state.key_value_pairs[i]['value'] = value_input
+            
+
+    #orginal submission for form
     submitted = st.form_submit_button("Submit to Bigtable")
 
 if submitted:
