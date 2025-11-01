@@ -87,14 +87,15 @@ def find_bigtable_transactions(
       tool_context=tool_context,
   )
 
-
-# Mock tool implementation
-def get_current_time(city: str) -> dict:
-    """Returns the current time in a specified city."""
-    return {"status": "success", "city": city, "time": "10:30 AM"}
-
-def say_hi():
-    return "hi"
+  bigquery_query ="""
+    SELECT card.card_number,profile, age, job, address, gender, card.type as card_type
+    FROM `google.com:cloud-bigtable-dev.cc.card` card
+    INNER JOIN `google.com:cloud-bigtable-dev.cc.disp` disp
+    ON card.disp_id = disp.disp_id
+    INNER JOIN `google.com:cloud-bigtable-dev.cc.client` client 
+    on disp.client_id = client.client_id
+    WHERE card.card_number =
+  """
 
 root_agent = Agent(
     model='gemini-2.5-flash',
