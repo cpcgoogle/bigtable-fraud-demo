@@ -1,3 +1,17 @@
+# Copyright 2025 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 #transaction_entry.py
 import streamlit as st
 import pandas as pd
@@ -131,7 +145,7 @@ if st.session_state.agent_ran:
     # --- Call the Fraud Agent ---
     with st.spinner("Agent is thinking..."):
         # Run the query and display the result
-        st.write("Pulling recent transaction history from Bigtable logical view for analysis")
+        st.write("Pulling a timeseries of transaction history from Bigtable logical view for analysis")
         df = bt_sql.return_transaction_hx_df(form_data['credit_card_str'])
         st.dataframe(df)
 
@@ -141,7 +155,7 @@ if st.session_state.agent_ran:
         st.write(
             """<div style="background-color: #f0f0f0; padding: 15px; border-radius: 5px;">
             <pre style="background-color: #e0e0e0; padding: 10px; border-radius: 3px; overflow-x: auto;">"""
-            + agent_analyzer.run_fraud_agent("What is the current time in Ridgewood, NJ")    
+            + agent_analyzer.run_fraud_agent("Create a fraud analysis for" + form_data['credit_card_str'])    
             + """</pre></div>""",
             unsafe_allow_html=True,
         )        

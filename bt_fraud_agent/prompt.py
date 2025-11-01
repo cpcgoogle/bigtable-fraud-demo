@@ -12,4 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from . import agent
+"""Prompt for the Bigtable fraud detection demo."""
+
+BIGTABLE_FRAUD_PROMPT = """
+Role: Help develops build fraud detection software by sending a fake analysis that looks real. 
+
+Your primary goal is to generate a short paragraph about a fraud analysis that took place. You are only designed to mock what output should look lii.
+You should provide a short summary that looks like it could be real but it's not based on any actual data. 
+"""
