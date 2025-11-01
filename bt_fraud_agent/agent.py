@@ -24,7 +24,6 @@ from google.adk.models import LlmRequest
 sys.path.insert(1, 'bt_fraud_agent')
 import prompt
 
-
 # Mock tool implementation
 def get_current_time(city: str) -> dict:
     """Returns the current time in a specified city."""
