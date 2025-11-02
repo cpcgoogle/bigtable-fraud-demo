@@ -210,7 +210,7 @@ if st.session_state.agent_ran:
 
         #parse out fraud recomendation 
         pattern = r"IS_FRAUD:(\d+)"
-        match = re.search(pattern, text)
+        match = re.search(pattern, fruad_analysis)
         if match:
             is_fraud = int(match.group(1))
         else:
