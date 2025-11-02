@@ -18,7 +18,6 @@ import sys
 sys.path.insert(1, 'bt_utils')
 import btconfig as my_bt
 
-
 dummy_data ={
     "transaction_id":"001",
     "is_fraud": "false",
@@ -28,14 +27,13 @@ dummy_data ={
 def write_simple(table_id,row_key,column_family_id,insert_data):
     bt = my_bt.my_Bigtable()
     bt_instance = bt.get_instance()
-
     instance = bt_instance
     table = instance.table(table_id)
 
     timestamp = datetime.datetime.now(datetime.timezone.utc)
 
     row = table.direct_row(row_key.encode("utf-8"))
-    
+
     for key,value in insert_data.items():
         row.set_cell(column_family_id, key, value, timestamp)
     try:
@@ -43,5 +41,30 @@ def write_simple(table_id,row_key,column_family_id,insert_data):
         print("Successfully wrote row {}.".format(row_key))
     except:
         print("Error writing row")   
+
+def write_transaction_conditional(table_id,check_blocked_merchant,credit_card_number,transaction_data):
+    bt = my_bt.my_Bigtable()
+    bt_instance = bt.get_instance()
+    instance = bt_instance
+    table = instance.table(table_id)
+
+    timestamp = datetime.datetime.now(datetime.timezone.utc)
+
+    row_filter = row_filters.RowFilterChain(
+        filters=[
+            row_filters.FamilyNameRegexFilter("blocklist"),
+            row_filters.ColumnQualifierRegexFilter("merchant"),
+            row_filters.ValueRegexFilter(check_blocked_merchant.encode("utf-8")),
+        ]
+    )
+    row = table.conditional_row(credit_card_number.encode("utf-8"), filter_=row_filter)
+    
+    # Create a list of mutations to be applied if the filter fails (merchant not in blocklist)
+    false_mutations = []
+    for key, value in transaction_data.items():
+        false_mutations.append(row.set_cell("cc_transaction", key, value, timestamp))
+    row.check_and_mutate(true_mutations=[], false_mutations=false_mutations)
+
+    row.commit()
 
 #write_simple("fraud_hx","fakemerchant","ai_analysis",dummy_data)

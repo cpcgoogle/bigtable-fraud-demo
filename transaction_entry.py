@@ -161,15 +161,28 @@ if st.session_state.submitted_transaction:
                 </div>"""
     #st.markdown(conditional_write, unsafe_allow_html=True)
     st.code("""
-                condition_filter = ValueRegexFilter(b'pending')
-                mutation.check_and_mutate(
-                    predicate=condition_filter,
-                    # True mutation: executed if the predicate (condition_filter) passes
-                    true_mutations=[
-                        ('set_cell', column_family_id, column_qualifier, new_value, None)
-                    ],
-                    # False mutation: executed if the predicate (condition_filter) fails
-                    false_mutations=[]""", 
+         def write_transaction_conditional(table_id,check_blocked_merchant,credit_card_number,transaction_data):
+            #removed Bigtable initialization for readablity
+            
+            timestamp = datetime.datetime.now(datetime.timezone.utc)
+
+            row_filter = row_filters.RowFilterChain(
+                filters=[
+                    row_filters.FamilyNameRegexFilter("blocklist"),
+                    row_filters.ColumnQualifierRegexFilter("merchant"),
+                    row_filters.ValueRegexFilter(check_blocked_merchant.encode("utf-8")),
+                ]
+            )
+            row = table.conditional_row(credit_card_number.encode("utf-8"), filter_=row_filter)
+            
+            # Create a list of mutations to be applied if the filter fails (merchant not in blocklist)
+            false_mutations = []
+            for key, value in transaction_data.items():
+                false_mutations.append(row.set_cell("cc_transaction", key, value, timestamp))
+            row.check_and_mutate(true_mutations=[], false_mutations=false_mutations)
+
+            row.commit()
+            """, 
                     language='python'
             )
 

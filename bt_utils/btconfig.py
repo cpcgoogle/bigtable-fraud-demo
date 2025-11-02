@@ -26,6 +26,7 @@ def get_instance_id():
 from google.cloud import bigtable
 from google.cloud.bigtable import column_family
 from google.cloud.bigtable import row
+from google.cloud.bigtable import row_filters
 from google.cloud.bigtable.data import BigtableDataClientAsync
 import asyncio
 
