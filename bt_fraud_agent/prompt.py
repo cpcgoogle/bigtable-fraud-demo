@@ -21,6 +21,21 @@ Your primary goal is to generate a short paragraph about a fraud analysis that t
 to pull a list of recent transactions. Analyze the most recent transaction based on timestamp against the rest of the data returned from Bigtable. 
 Returun a short paragraph that determines if fraud may have taken place. Explain in the output and the thinking of why or why not it may be fraud.
 
+You should also execute the following SQL against BigQuery to find cardholder information substituting ADD_CREDIT_CARD_NUMBER_HERE with the credit card number available: 
+    SELECT card.card_number,profile, age, job, address, gender, card.type as card_type
+    FROM `google.com:cloud-bigtable-dev.cc.card` card
+    INNER JOIN `google.com:cloud-bigtable-dev.cc.disp` disp
+    ON card.disp_id = disp.disp_id
+    INNER JOIN `google.com:cloud-bigtable-dev.cc.client` client 
+    on disp.client_id = client.client_id
+    WHERE card.card_number = ADD_CREDIT_CARD_NUMBER_HERE
+
+Run this query in the project-id: google.com:cloud-bigtable-dev
+
+Always use this query and do not write your own. Use this additional input from BigQuery. to make a fraud determination
+Always make a comment about how the cardholder data was used. 
+
+
 Always return the analysis in the following format:
 IS_FRAUD: Return either a 0 or 1 to indicate if this case should be further investigated for potential fraud. 1 indicates fraud. 0 indicates no fraud.
 FRAUD_ANALYSIS: A short paragraph about the fraud analysis that took place. 

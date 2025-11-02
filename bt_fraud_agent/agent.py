@@ -35,6 +35,13 @@ from google.adk.tools.tool_context import ToolContext
 import google.auth
 from google.auth.credentials import Credentials
 
+#Bigquery tools
+from google.adk.tools.bigquery import BigQueryCredentialsConfig
+from google.adk.tools.bigquery import BigQueryToolset
+from google.adk.tools.bigquery.config import BigQueryToolConfig
+from google.adk.tools.bigquery.config import WriteMode
+#from google.adk.tools.bigquery import query_tool as bq_query_tool
+
 #load my prompt from seperate file
 sys.path.insert(1, 'bt_fraud_agent')
 import prompt
@@ -42,6 +49,7 @@ import prompt
 sys.path.insert(1, 'bt_utils')
 import btconfig
 
+########Bigtable tool section############
 tool_settings = BigtableToolSettings()
 
 # Define a credentials config - in this example we are using application default
@@ -87,6 +95,7 @@ def find_bigtable_transactions(
       tool_context=tool_context,
   )
 
+  #########Bigquery tool section############
   bigquery_query ="""
     SELECT card.card_number,profile, age, job, address, gender, card.type as card_type
     FROM `google.com:cloud-bigtable-dev.cc.card` card
@@ -97,18 +106,31 @@ def find_bigtable_transactions(
     WHERE card.card_number =
   """
 
+credentials_config = BigQueryCredentialsConfig(
+  credentials=application_default_credentials
+)
+
+bq_tool_config = BigQueryToolConfig(write_mode=WriteMode.BLOCKED)
+
+bigquery_toolset = BigQueryToolset(
+  credentials_config=credentials_config, 
+  bigquery_tool_config=bq_tool_config
+)
+
+
+########Agent that calls both Bigtable and BigQuery############
 root_agent = Agent(
     model='gemini-2.5-flash',
     name='root_agent',
-    description="Run a fraud analysis based on data in Bigtable.",
+    description="Run a credit card fraud analysis based on transaction data in Bigtable and cardholder information in BigQuery.",
     instruction=prompt.BIGTABLE_FRAUD_PROMPT,
     tools=[
         bigtable_toolset,
+        bigquery_toolset,
         GoogleTool(
             func=find_bigtable_transactions,
             credentials_config=credentials_config,
             tool_settings=tool_settings,
-        )
+        ),
     ],
 )
-
