@@ -22,6 +22,7 @@ import re
 
 sys.path.insert(1, 'bt_utils')
 import execute_btsql as bt_sql
+import bt_write as bt_write
 
 sys.path.insert(1, 'bt_fraud_agent')
 import agent_analyzer as agent_analyzer
@@ -248,9 +249,13 @@ if st.session_state.agent_ran:
             + """</pre></div>""",
             unsafe_allow_html=True,
             )
-            
 
-
+        fraud_dict={
+            "is_fraud": is_fraud,
+            "fraud_analysis": fruad_analysis
+        }
+        bt_write.write_simple("fraud_hx",form_data['merchant'],"ai_analysis",fraud_dict)
+        st.write("Fraud analysis captured in Bigtable table fraud_hx")
 
 
 
