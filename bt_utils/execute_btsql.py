@@ -15,6 +15,7 @@
 import pandas as pd
 from numpy.random import default_rng as rng
 import sys
+import random
 
 sys.path.insert(1, 'bt_utils')
 import btconfig as my_bt
@@ -37,5 +38,47 @@ def return_transaction_hx_df(credit_card_number):
         data_rows.append(row_data)
         df = pd.DataFrame(data_rows, columns=columns)
     return df
+
+def generate_sample_data():
+    """Generates a sample DataFrame for demonstration."""
+    merchants = ["Global Goods Inc.", "QuickShip Logistics", "TechGadget Hub", "Corner Bakery", "Zippy Car Wash"]
+    
+    data = []
+    
+    # Generate 50 transaction records
+    for i in range(50):
+        merchant = random.choice(merchants)
+        is_fraud = random.choice([True, False])
+        
+        if is_fraud:
+            analysis = random.choice([
+                "High volume of international transactions in a short period.",
+                "Multiple failed payment attempts followed by a successful one.",
+                "Transaction velocity exceeds typical user behavior limits.",
+                "IP address geo-location mismatch with the card's issuing bank location."
+            ])
+        else:
+            analysis = random.choice([
+                "Normal spending pattern observed. No red flags.",
+                "Transaction is consistent with past user behavior.",
+                "Payment gateway validated identity successfully.",
+                "Low-risk transaction based on amount and location."
+            ])
+            
+        data.append({
+            'merchant_name': merchant,
+            'is_fraud': is_fraud,
+            'fraud_analysis': analysis
+        })
+        
+    df = pd.DataFrame(data)
+    
+    # Group by merchant to get the 'count' for the main display
+    merchant_summary = df.groupby('merchant_name').agg(
+        count=('merchant_name', 'size')
+    ).reset_index().rename(columns={'size': 'count'})
+    
+    return merchant_summary, df
+
     
 
