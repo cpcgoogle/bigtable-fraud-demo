@@ -31,10 +31,10 @@ for index, row in merchant_summary.iterrows():
     r_col1, r_col2, r_col3, r_col4 = st.columns([2, 1, 3, 1])
     
     # Column 1: Merchant Name
-    r_col1.write(f"**{row['merchant_name']}**")
+    r_col1.write(f"*{row['merchant']}*")
     
     # Column 2: Count
-    r_col2.write(row['count'])
+    r_col2.write(row['approx_distinct_transaction_count'])
     
     # Column 3: Review Analysis Button (opens the Accordion)
     
@@ -48,10 +48,10 @@ for index, row in merchant_summary.iterrows():
     #if r_col3.button("Review AI Analysis", key=analysis_button_key):
         
         # Filter the raw data for the current merchant
-    current_merchant_data = raw_data[raw_data['merchant_name'] == row['merchant_name']]
+    current_merchant_data = raw_data[raw_data['merchant'] == row['merchant']]
         
         # Create an accordion inside the placeholder
-    with accordion_placeholder.expander(f"**Detailed Analysis for {row['merchant_name']}**"):
+    with accordion_placeholder.expander(f"*Detailed Analysis for {row['merchant']}*"):
             # Display a summary first
             total_fraud_count = current_merchant_data['is_fraud'].sum()
             total_records = len(current_merchant_data)
@@ -77,6 +77,6 @@ for index, row in merchant_summary.iterrows():
     
     # The action that happens when the button is clicked
     if r_col4.button("Add to Blocklist", key=blocklist_button_key, type="primary"):
-        st.toast(f"**{row['merchant_name']}** has been added to the blocklist successfully!", icon='🚨')
+        st.toast(f"*{row['merchant']}* has been added to the blocklist successfully!", icon='🚨')
         
     st.markdown("---") # Separator between merchant rows

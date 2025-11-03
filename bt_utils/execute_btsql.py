@@ -39,9 +39,40 @@ def return_transaction_hx_df(credit_card_number):
         df = pd.DataFrame(data_rows, columns=columns)
     return df
 
+def return_top_transactions_last_hour():
+    #this calls the materalized view that is creating timebuckets by merchant
+    #Note: this isn't actually pulling for last hour because that would make it hard to demo
+    
+    mv_sql ="""
+        SELECT 
+        merchant, 
+        HLL_COUNT.EXTRACT(HLL_sketch) as approx_distinct_transaction_count
+        FROM mv_fraudulent_merchant_review
+        GROUP BY 1,2
+        ORDER BY approx_distinct_transaction_count DESC
+        LIMIT 10;
+    """
+    
+    bt = my_bt.my_Bigtable()
+    rows = bt.execute_sql(mv_sql)
+
+    df_mv = pd.DataFrame() 
+    merchants = []
+
+    columns = ['merchant','approx_distinct_transaction_count']
+    data_rows = []
+    for row in rows:
+        merchants.append(row[0])
+        row_data = [row[0],row[1]]
+        data_rows.append(row_data)
+        df_mv = pd.DataFrame(data_rows, columns=columns)
+
+    return df_mv, merchants
+
+
 def generate_sample_data():
     """Generates a sample DataFrame for demonstration."""
-    merchants = ["Global Goods Inc.", "QuickShip Logistics", "TechGadget Hub", "Corner Bakery", "Zippy Car Wash"]
+    merchant_summary, merchants = return_top_transactions_last_hour()
     
     data = []
     
@@ -66,7 +97,7 @@ def generate_sample_data():
             ])
             
         data.append({
-            'merchant_name': merchant,
+            'merchant': merchant,
             'is_fraud': is_fraud,
             'fraud_analysis': analysis
         })
@@ -74,11 +105,13 @@ def generate_sample_data():
     df = pd.DataFrame(data)
     
     # Group by merchant to get the 'count' for the main display
-    merchant_summary = df.groupby('merchant_name').agg(
-        count=('merchant_name', 'size')
-    ).reset_index().rename(columns={'size': 'count'})
+    #merchant_summary = df.groupby('merchant_name').agg(
+    #    count=('merchant_name', 'size')
+    #).reset_index().rename(columns={'size': 'count'})
     
+
     return merchant_summary, df
 
-    
+
+#print(return_top_transactions_last_hour())
 
