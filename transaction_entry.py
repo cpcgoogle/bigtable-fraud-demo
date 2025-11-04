@@ -255,6 +255,8 @@ if st.session_state.agent_ran:
         df = bt_sql.return_transaction_hx_df(form_data['credit_card_str'])
         st.dataframe(df)
 
+        st.write("Pulling card holder information from BigQuery to help analyze")
+
         #AGENT GETS RUN HERE
         fruad_analysis = agent_analyzer.run_fraud_agent("Create a fraud analysis for" + form_data['credit_card_str'])
 

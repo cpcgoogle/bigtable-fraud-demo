@@ -83,7 +83,7 @@ def find_bigtable_transactions(
   INSTANCE_ID = btconfig.get_instance_id()
 
   query = f"""
-   SELECT * FROM v_transactions where credit_card_number = {credit_card_number}
+   SELECT * FROM v_transactions where credit_card_number = {credit_card_number} ORDER BY transaction_ts DESC LIMIT 25
     """
 
   return query_tool.execute_sql(

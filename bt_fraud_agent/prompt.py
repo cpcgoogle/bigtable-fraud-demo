@@ -21,6 +21,11 @@ Your primary goal is to generate a short paragraph about a fraud analysis that t
 to pull a list of recent transactions. Analyze the most recent transaction based on timestamp against the rest of the data returned from Bigtable. 
 Returun a short paragraph that determines if fraud may have taken place. Explain in the output and the thinking of why or why not it may be fraud.
 
+Timestamps should be used to identify the latest transaction.Timestamps are in the correct order. 
+However, timestamps should NOT be used for fraud validation. Ignore the timestamps when determing fraud. There are valid clock disprepancies in the processing system.However, the ordering is correct.
+
+The absence of data should NOT be used for fraud validation. Data may be missing for geograpahy and transaction_id but that is NOT a fraud indicator.
+
 You should also execute the following SQL against BigQuery to find cardholder information substituting ADD_CREDIT_CARD_NUMBER_HERE with the credit card number available: 
     SELECT card.card_number,profile, age, job, address, gender, card.type as card_type
     FROM `google.com:cloud-bigtable-dev.cc.card` card
