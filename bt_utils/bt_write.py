@@ -33,6 +33,7 @@ def write_simple(table_id,row_key,column_family_id,insert_data):
     table = instance.table(table_id)
 
     timestamp = datetime.datetime.now(datetime.timezone.utc)
+    
 
     row = table.direct_row(row_key.encode("utf-8"))
 
@@ -50,8 +51,13 @@ async def write_and_isblocklist(credit_card_number,category,merchant,amount):
     from google.cloud.bigtable.data import BigtableDataClientAsync
     from google.cloud.bigtable.data import row_filters
     from google.cloud.bigtable.data import SetCell
+    import google.cloud.bigtable.data.mutations as mutations
 
     table_id = "transactions"
+
+    #create time buckets for counters
+    now_utc = datetime.datetime.now(datetime.timezone.utc)
+    hourly_time_bucket = int(now_utc.replace(minute=0, second=0, microsecond=0).timestamp() * 1000)
 
     async with BigtableDataClientAsync(project=my_bt.project_id) as client:
         async with client.get_table(my_bt.instance_id, table_id) as table:
@@ -68,7 +74,7 @@ async def write_and_isblocklist(credit_card_number,category,merchant,amount):
             if_false = [
                 SetCell("cc_transaction", "merchant", merchant),
                 SetCell("cc_transaction", "category", category),
-                SetCell("cc_transaction", "amount", amount)
+                SetCell("cc_transaction", "amount", amount),
                 ]
 
             #add merchant
@@ -78,9 +84,16 @@ async def write_and_isblocklist(credit_card_number,category,merchant,amount):
                 true_case_mutations=None,
                 false_case_mutations=if_false,
             )
+            #increment counter based on transaction result
+            if result:
+                blocked_count = mutations.AddToCell("velocity","blocked_transaction_hourly",1,hourly_time_bucket)
+                await table.mutate_row(row_key=credit_card_number,mutations=[blocked_count])
+            else:
+                transaction_count = mutations.AddToCell("velocity","completed_transaction_hourly",1,hourly_time_bucket)
+                await table.mutate_row(row_key=credit_card_number,mutations=[transaction_count])
+                
             #false means data was written
             #true means it was blocked
-            #print(result)
             return result
 
 
