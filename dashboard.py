@@ -47,7 +47,7 @@ for index, row in merchant_summary.iterrows():
     # The actual button: if clicked, its key is now 'in' st.session_state
     #if r_col3.button("Review AI Analysis", key=analysis_button_key):
         
-        # Filter the raw data for the current merchant
+    # Filter the raw data for the current merchant
     current_merchant_data = raw_data[raw_data['merchant'] == row['merchant']]
         
         # Create an accordion inside the placeholder
@@ -63,7 +63,7 @@ for index, row in merchant_summary.iterrows():
             
             st.dataframe(
                 analysis_df, 
-                use_container_width=True,
+                width="stretch",
                 column_config={
                     "is_fraud": st.column_config.CheckboxColumn(
                         "Is Fraud?", help="AI Model's Fraud Flag", default=False

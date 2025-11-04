@@ -222,7 +222,7 @@ if st.session_state.agent_ran:
         unsafe_allow_html=True)
 
         #parse out fraud recomendation 
-        pattern = r"IS_FRAUD:(\d+)"
+        pattern = r"IS_FRAUD: (\d+)"
         match = re.search(pattern, fruad_analysis)
         if match:
             is_fraud = int(match.group(1))
@@ -267,6 +267,7 @@ if st.session_state.agent_ran:
             "is_fraud": is_fraud,
             "fraud_analysis": fruad_analysis
         }
+
         bt_write.write_simple("fraud_hx",form_data['merchant'],"ai_analysis",fraud_dict)
         st.write("Fraud analysis captured in Bigtable table fraud_hx")
 

@@ -35,7 +35,9 @@ def write_simple(table_id,row_key,column_family_id,insert_data):
     row = table.direct_row(row_key.encode("utf-8"))
 
     for key,value in insert_data.items():
-        row.set_cell(column_family_id, key, value, timestamp)
+        print(key,value)
+        #TODO: check if the encode actually works for both string and decimal
+        row.set_cell(column_family_id, key, value.encode("utf-8"), timestamp)
     try:
         row.commit()
         print("Successfully wrote row {}.".format(row_key))
