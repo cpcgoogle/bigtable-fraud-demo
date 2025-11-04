@@ -81,7 +81,6 @@ def return_ai_analysis(merchants):
     for merchant in merchants:
         fraud_sql += "'" + merchant + "',"
     fraud_sql = fraud_sql[:-1] + ");"
-    
 
     bt = my_bt.my_Bigtable()
     rows = bt.execute_sql(fraud_sql)

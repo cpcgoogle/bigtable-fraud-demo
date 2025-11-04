@@ -14,6 +14,8 @@
 
 import datetime
 import sys
+from google.cloud.bigtable import row_filters
+import asyncio
 
 sys.path.insert(1, 'bt_utils')
 import btconfig as my_bt
@@ -44,6 +46,45 @@ def write_simple(table_id,row_key,column_family_id,insert_data):
     except:
         print("Error writing row")   
 
+async def write_and_isblocklist(credit_card_number,category,merchant,amount):
+    from google.cloud.bigtable.data import BigtableDataClientAsync
+    from google.cloud.bigtable.data import row_filters
+    from google.cloud.bigtable.data import SetCell
+
+    table_id = "transactions"
+
+    async with BigtableDataClientAsync(project=my_bt.project_id) as client:
+        async with client.get_table(my_bt.instance_id, table_id) as table:
+            family_id = "blocklist"
+
+            row_filter = row_filters.RowFilterChain(
+                filters=[
+                    row_filters.FamilyNameRegexFilter(family_id),
+                    row_filters.ColumnQualifierRegexFilter("merchant"),
+                    row_filters.ValueRegexFilter(merchant),
+                ]
+            )
+
+            if_false = [
+                SetCell("cc_transaction", "merchant", merchant),
+                SetCell("cc_transaction", "category", category),
+                SetCell("cc_transaction", "amount", amount)
+                ]
+
+            #add merchant
+            result = await table.check_and_mutate_row(
+                credit_card_number,
+                row_filter,
+                true_case_mutations=None,
+                false_case_mutations=if_false,
+            )
+            #false means data was written
+            #true means it was blocked
+            #print(result)
+            return result
+
+
+
 def write_transaction_conditional(table_id,check_blocked_merchant,credit_card_number,transaction_data):
     bt = my_bt.my_Bigtable()
     bt_instance = bt.get_instance()
@@ -60,13 +101,18 @@ def write_transaction_conditional(table_id,check_blocked_merchant,credit_card_nu
         ]
     )
     row = table.conditional_row(credit_card_number.encode("utf-8"), filter_=row_filter)
-    
-    # Create a list of mutations to be applied if the filter fails (merchant not in blocklist)
-    false_mutations = []
+
+    # Stage mutations to be applied if the filter fails (false_mutations)
+    # This means the merchant is NOT in the blocklist, so the transaction is written.
     for key, value in transaction_data.items():
-        false_mutations.append(row.set_cell("cc_transaction", key, value, timestamp))
-    row.check_and_mutate(true_mutations=[], false_mutations=false_mutations)
+        row.false_mutations.append(row.set_cell("cc_transaction", key, str(value).encode("utf-8"), timestamp))
 
     row.commit()
 
-#write_simple("fraud_hx","fakemerchant","ai_analysis",dummy_data)
+#test this
+#test_transaction={
+#    "transaction_id":"001",
+#    "merchant":"Boyer PLC" 
+#}
+#asyncio.run(write_transaction_conditional_async("transactions","Boyer PLC","180014313137393"))
+#asyncio.run(write_and_isblocklist("180014313137393","shopping_pos", "Boyer PLC","99.00"))

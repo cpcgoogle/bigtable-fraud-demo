@@ -42,6 +42,10 @@ if 'agent_ran' not in st.session_state:
 # Store the transaction details to persist after rerun
 if 'transaction_data' not in st.session_state:
     st.session_state.transaction_data = {}
+if 'data_written' not in st.session_state:
+    st.session_state.data_written = False
+if 'transaction_blocked' not in st.session_state:
+    st.session_state.transaction_blocked = ""
 
 # Variables defined outside the form need to be initialized for the first run
 credit_card_str = ''
@@ -137,7 +141,7 @@ if submitted:
         'merchant': merchant
     }
     # Reruns the app immediately to process the form submission and show the conditional write
-    #st.rerun()
+    st.rerun()
 
 if st.session_state.submitted_transaction:
  
@@ -162,48 +166,70 @@ if st.session_state.submitted_transaction:
     #st.markdown(conditional_write, unsafe_allow_html=True)
     st.code("""
          def write_transaction_conditional(table_id,check_blocked_merchant,credit_card_number,transaction_data):
-            #removed Bigtable initialization for readablity
-            
-            timestamp = datetime.datetime.now(datetime.timezone.utc)
+        #removed Bigtable initialization for readablity
 
-            row_filter = row_filters.RowFilterChain(
-                filters=[
-                    row_filters.FamilyNameRegexFilter("blocklist"),
-                    row_filters.ColumnQualifierRegexFilter("merchant"),
-                    row_filters.ValueRegexFilter(check_blocked_merchant.encode("utf-8")),
-                ]
-            )
-            row = table.conditional_row(credit_card_number.encode("utf-8"), filter_=row_filter)
-            
-            # Create a list of mutations to be applied if the filter fails (merchant not in blocklist)
-            false_mutations = []
-            for key, value in transaction_data.items():
-                false_mutations.append(row.set_cell("cc_transaction", key, value, timestamp))
-            row.check_and_mutate(true_mutations=[], false_mutations=false_mutations)
+        table_id = "transactions"
 
-            row.commit()
+        async with BigtableDataClientAsync(project=my_bt.project_id) as client:
+            async with client.get_table(my_bt.instance_id, table_id) as table:
+                family_id = "blocklist"
+
+                row_filter = row_filters.RowFilterChain(
+                    filters=[
+                        row_filters.FamilyNameRegexFilter(family_id),
+                        row_filters.ColumnQualifierRegexFilter("merchant"),
+                        row_filters.ValueRegexFilter(merchant),
+                    ]
+                )
+
+                if_false = [
+                    SetCell("cc_transaction", "merchant", merchant),
+                    SetCell("cc_transaction", "category", category),
+                    SetCell("cc_transaction", "amount", amount)
+                    ]
+
+                #add merchant
+                result = await table.check_and_mutate_row(
+                    credit_card_number,
+                    row_filter,
+                    true_case_mutations=None,
+                    false_case_mutations=if_false,
+                )
+                #false means data was written
+                #true means it was blocked
+                print(result)
+                return result
             """, 
                     language='python'
             )
+    if st.session_state.data_written is not True:
+        st.session_state.transaction_blocked = asyncio.run(bt_write.write_and_isblocklist(credit_card_str,category, merchant,str(amount)))
 
-    ##st.write(f"![Check Logo]({green_check_url}) {text}")
-    st.write(f'<img src="{green_check_url}" width="100">', unsafe_allow_html=True)
-    st.write("<b>Rules based check sucessfull - Transaction Submitted to Bigtable</b>", unsafe_allow_html=True)
-    # --- Display Collected Data ---
-    st.markdown("---")
-    st.header("Submitted Transaction")
+    if st.session_state.transaction_blocked:
+            #st.write(f'<img src="{green_check_url}" width="100">', unsafe_allow_html=True)
+            st.write("<b>Merchant found on blocklist</b>", unsafe_allow_html=True)
+            st.markdown("---")
+            st.markdown('<h1 style="color: red;">Transaction Blocked</h1>', unsafe_allow_html=True)
+    else: 
+        ##st.write(f"![Check Logo]({green_check_url}) {text}")
+        st.write(f'<img src="{green_check_url}" width="100">', unsafe_allow_html=True)
+        st.write("<b>Rules based check sucessfull - Transaction Submitted to Bigtable</b>", unsafe_allow_html=True)
+            # --- Display Collected Data ---
+        st.markdown("---")
+        st.header("Submitted Transaction")
+        st.session_state.data_written = True
 
-    #if credit_card_validated and amount > 0:
-            # Display the captured data in a structured way
-    form_data = st.session_state.transaction_data
-    st.write(f"**Credit Card Number:** **** **** **** {form_data['credit_card_str'][-4:]}")
-    st.write(f"**Transaction Amount:** ${form_data['amount']:.2f}")
-    st.write(f"**Category:** {form_data['category']}")
-    st.write(f"**Merchant:** {form_data['merchant']}")
- 
-    agent_analysis = st.button("Run fraud detection agent on historical transactions")
-    if agent_analysis:
-        st.session_state.agent_ran = True
+            #if credit_card_validated and amount > 0:
+                    # Display the captured data in a structured way
+        form_data = st.session_state.transaction_data
+        st.write(f"**Credit Card Number:** **** **** **** {form_data['credit_card_str'][-4:]}")
+        st.write(f"**Transaction Amount:** ${form_data['amount']:.2f}")
+        st.write(f"**Category:** {form_data['category']}")
+        st.write(f"**Merchant:** {form_data['merchant']}")
+        
+        agent_analysis = st.button("Run fraud detection agent on historical transactions")
+        if agent_analysis:
+            st.session_state.agent_ran = True
 
 if st.session_state.agent_ran:
     st.header("Fraud Detection Agent Analysis 🤖")
@@ -264,7 +290,7 @@ if st.session_state.agent_ran:
             )
 
         fraud_dict={
-            "is_fraud": is_fraud,
+            "is_fraud": str(is_fraud),
             "fraud_analysis": fruad_analysis
         }
 
